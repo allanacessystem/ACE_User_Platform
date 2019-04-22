@@ -105,6 +105,8 @@ class RegisterController extends Controller
     protected function createSuperAdmin(Request $request)
     {
         $data = $request->all();
+        $jsonObject = '{ "Roles": "Super_Admin" }';
+
         User::create([
             'firstName' => $data['firstName'],
             'lastName' => $data['lastName'],
@@ -114,7 +116,7 @@ class RegisterController extends Controller
             'notes' => $data['notes'],
         ]);
         
-        self::sendPostRequest($data);
+        self::sendPostRequest($data,$jsonObject);
         
         return view('home');
     }
@@ -128,9 +130,20 @@ class RegisterController extends Controller
     protected function createEmployee(Request $request)
     {
         $data = $request->all();
-        $myCheckboxes = $request->input('OnRouteDetails_tbl');
+        //$myCheckboxes = $request->input('OnRouteDetails_tbl');
 
-        dd($data);
+        $stringArray = self::getArrayString($data['OnRouteDetails_tbl']);
+        $jsonObject = '{ "OnRouteDetails_tbl": ['.$stringArray.'], ';
+
+        $stringArray = self::getArrayString($data['CustomerSurvey_tbl']);
+        $jsonObject = $jsonObject.'"CustomerSurvey_tbl": ['.$stringArray.'], ';
+
+        $stringArray = self::getArrayString($data['TraveledHistory_tbl']);
+        $jsonObject = $jsonObject.'"TraveledHistory_tbl": ['.$stringArray.'], ';
+
+        $stringArray = self::getArrayString($data['home_tbl']);
+        $jsonObject = $jsonObject.'"home_tbl": ['.$stringArray.'] }';
+
         Employee::create([
             'firstName' => $data['firstName'],
             'lastName' => $data['lastName'],
@@ -139,10 +152,19 @@ class RegisterController extends Controller
             'phoneNumber' => $data['phoneNumber'],
             'employeeAlias' => $data['employeeAlias'],
         ]);
-
-        self::sendPostRequest($data);
+        
+        //add verification to send post request if permissions were selected
+        self::sendPostRequest($data,$jsonObject);
 
         return view('home');
+    }
+
+    public function getArrayString($array){
+        $stringArray = '';
+        foreach ($array as $value){
+            $stringArray .=  $value.',';
+        }
+        return $stringArray;
     }
 
     /**
@@ -154,6 +176,19 @@ class RegisterController extends Controller
     protected function createCustomer(Request $request)
     {
         $data = $request->all();
+
+        $stringArray = self::getArrayString($data['OnRouteDetails_tbl']);
+        $jsonObject = '{ "OnRouteDetails_tbl": ['.$stringArray.'], ';
+
+        $stringArray = self::getArrayString($data['CustomerSurvey_tbl']);
+        $jsonObject = $jsonObject.'"CustomerSurvey_tbl": ['.$stringArray.'], ';
+
+        $stringArray = self::getArrayString($data['TraveledHistory_tbl']);
+        $jsonObject = $jsonObject.'"TraveledHistory_tbl": ['.$stringArray.'], ';
+
+        $stringArray = self::getArrayString($data['home_tbl']);
+        $jsonObject = $jsonObject.'"home_tbl": ['.$stringArray.'] }';
+
         Customer::create([
             'firstName' => $data['firstName'],
             'lastName' => $data['lastName'],
@@ -162,14 +197,14 @@ class RegisterController extends Controller
             'phoneNumber' => $data['phoneNumber'],
         ]);
 
-        self::sendPostRequest($data);
+        self::sendPostRequest($data,$jsonObject);
 
         return view('home');
     }
 
-    protected function sendPostRequest($data){
+    protected function sendPostRequest($data ,$jsonObject){
         $client = new \GuzzleHttp\Client();
-        $url = "http://homestead.ace_mobility/api/registerUser";
+        $url = "http://homestead.ace_mobility/api/registerUser";//"http://ec2-35-155-223-155.us-west-2.compute.amazonaws.com/api/registerUser";
        
         $response = $client->request('POST', $url, [
             'form_params' => [
@@ -177,7 +212,7 @@ class RegisterController extends Controller
                 'lastName' => $data['lastName'],
                 'emailAddress' => $data['emailAddress'],
                 'password' => Hash::make($data['password']),
-                'Roles_Permissions_JSON' => '{ "Groups": { "Super_Admin": "Super_Admin" } }',
+                'Roles_Permissions_JSON' => $jsonObject,
             ]
         ]);
     }
