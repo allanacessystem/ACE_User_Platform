@@ -155,14 +155,14 @@ class RegisterController extends Controller
         
         //add verification to send post request if permissions were selected
         self::sendPostRequest($data,$jsonObject);
-
+    
         return view('home');
     }
 
     public function getArrayString($array){
         $stringArray = '';
         foreach ($array as $value){
-            $stringArray .=  $value.',';
+            $stringArray .=  '"'.$value.'",';
         }
         return $stringArray;
     }
